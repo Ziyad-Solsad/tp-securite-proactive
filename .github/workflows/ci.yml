@@ -1,4 +1,4 @@
-name: CI Quickstart
+name: CI Quickstart & Security
 
 on:
   push:
@@ -9,9 +9,8 @@ on:
 permissions: read-all
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
-
     steps:
     - name: Récupération du code
       uses: actions/checkout@v4
@@ -29,4 +28,23 @@ jobs:
     - name: Test de validation syntaxique
       run: |
         python -m py_compile app.py
-        echo "Vérification basique terminée avec succès."
+
+  docker-trivy-security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Récupération du code
+      uses: actions/checkout@v4
+
+    - name: Construction de l'image Docker
+      run: |
+        docker build -t tp-app:latest .
+
+    - name: Scan de vulnérabilités avec Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'tp-app:latest'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'HIGH,CRITICAL'
